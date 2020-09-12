@@ -57,7 +57,7 @@ Server create_server()
 /**
  * Accept socket that wants to connect to server
  */
-int server_accept_socket(struct Server server)
+int server_accept_socket(Server server)
 {
     int accepted_socket, address_size = sizeof(struct sockaddr_in);
     accepted_socket = accept(server.fd, (struct sockaddr *)&server.address, &address_size);
@@ -113,13 +113,18 @@ char *read_data_from_socket(int socket)
         }
     }
 
+    if (read_number == 0)
+    {
+        return NULL;
+    }
+
     return data;
 }
 
 /**
  * Parse server request
  */
-Server_request *server_parse_request(int socket)
+Server_request *server_parse_request(Server server, int socket)
 {
     Server_request *server_request = (Server_request *)malloc(sizeof(server_request));
     char *data = NULL;
@@ -135,6 +140,14 @@ Server_request *server_parse_request(int socket)
      */
     data = read_data_from_socket(socket);
 
+    if (data == NULL)
+    {
+        epoll_ctl_remove(server.epoll_fd, socket);
+        close(socket);
+
+        return NULL;
+    }
+
     server_request->content_length = 1;
     server_request->data = data;
 
@@ -146,7 +159,6 @@ Server_request *server_parse_request(int socket)
  */
 Server_command *server_parse_request_as_command(Server_request *server_request, char *error)
 {
-    char *command_validation_error;
     Server_command *server_command = (Server_command *)malloc(sizeof(Server_command));
     cJSON *json_request = cJSON_Parse(server_request->data);
 
@@ -161,6 +173,7 @@ Server_command *server_parse_request_as_command(Server_request *server_request, 
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL)
         {
+            strcpy(error, "JSON parse error: Request not valid.");
             fprintf(stderr, "cJSON parse error: %s\n", error_ptr);
             return NULL;
         }
@@ -169,7 +182,7 @@ Server_command *server_parse_request_as_command(Server_request *server_request, 
     cJSON *command = cJSON_GetObjectItem(json_request, "command");
     if (cJSON_IsString(command) == 0 || (command->valuestring == NULL))
     {
-        strcpy(error, "cJSON parse error: 'command' key not found.");
+        strcpy(error, "JSON parse error: 'command' key not found.");
         printf("cJSON parse error: 'command' key not found.\n");
         return NULL;
     }
@@ -177,7 +190,7 @@ Server_command *server_parse_request_as_command(Server_request *server_request, 
     cJSON *key = cJSON_GetObjectItemCaseSensitive(json_request, "key");
     if (cJSON_IsString(key) == 0 || (key->valuestring == NULL))
     {
-        strcpy(error, "cJSON parse error: 'key' key not found.");
+        strcpy(error, "JSON parse error: 'key' key not found.");
         printf("cJSON parse error: 'key' key not found.\n");
         return NULL;
     }
@@ -185,7 +198,7 @@ Server_command *server_parse_request_as_command(Server_request *server_request, 
     cJSON *value = cJSON_GetObjectItemCaseSensitive(json_request, "value");
     if (cJSON_IsString(value) == 0 || (value->valuestring == NULL))
     {
-        strcpy(error, "cJSON parse error: 'value' key not found.");
+        strcpy(error, "JSON parse error: 'value' key not found.");
         printf("cJSON parse error: 'value' key not found.\n");
         return NULL;
     }
@@ -194,11 +207,10 @@ Server_command *server_parse_request_as_command(Server_request *server_request, 
     server_command->key = strdup(key->valuestring);
     server_command->value = strdup(value->valuestring);
 
-    command_validation_error = server_command_validate(server_command);
-    if (command_validation_error != NULL)
+    if (server_command_validate(server_command, error) == 0)
     {
-        strcpy(error, command_validation_error);
-        printf(command_validation_error);
+        // strcpy(error, command_validation_error);
+        printf("%s\n", error);
         return NULL;
     }
 
@@ -237,13 +249,12 @@ int server_send_response(int socket, Server_response *server_response)
 /**
  * Validate server command received from client
  */
-char *server_command_validate(Server_command *server_command)
+int server_command_validate(Server_command *server_command, char *error)
 {
     char allowed_commands[3][100] = {
         {"get"},
         {"set"},
-        {"remove"}
-    };
+        {"remove"}};
     int allowed_commands_size = sizeof(allowed_commands), allowed_commands_row_size = sizeof(allowed_commands[0]), i, j, valid = 0;
 
     /**
@@ -259,7 +270,8 @@ char *server_command_validate(Server_command *server_command)
 
     if (valid == 0)
     {
-        return "Command does not exists.";
+        sprintf(error, "Command '%s' does not exists.", server_command->command);
+        return 0;
     }
 
     /**
@@ -267,8 +279,9 @@ char *server_command_validate(Server_command *server_command)
      */
     if (strcmp(server_command->command, "set") == 0 && server_command->value[0] == '\0')
     {
-        return "Command 'set' requires a value.";
+        sprintf(error, "Command 'set' requires a value.", server_command->command);
+        return 0;
     }
 
-    return NULL;
+    return 1;
 }

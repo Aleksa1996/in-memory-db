@@ -52,10 +52,10 @@ int server_accept_socket(struct Server server);
 
 char *read_data_from_socket(int socket);
 
-Server_request *server_parse_request(int socket);
+Server_request *server_parse_request(Server server, int socket);
 
 Server_command *server_parse_request_as_command(Server_request *server_request, char *error);
 
 int server_send_response(int socket, Server_response *server_response);
 
-char *server_command_validate(Server_command *server_command);
+int server_command_validate(Server_command *server_command, char *error);

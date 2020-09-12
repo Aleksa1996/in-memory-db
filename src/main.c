@@ -54,7 +54,12 @@ int main(int argc, char const *argv[])
 			/**
 			 * Parse incoming request
 			 */
-			Server_request *server_request = server_parse_request(events[i].data.fd);
+			Server_request *server_request = server_parse_request(server, events[i].data.fd);
+
+			if (server_request == NULL)
+			{
+				continue;
+			}
 
 			/**
 			 * Try to parse request as command
@@ -137,6 +142,7 @@ int main(int argc, char const *argv[])
 		}
 	}
 
+	free(error);
 	close(server.epoll_fd);
 	close(server.fd);
 
