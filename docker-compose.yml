@@ -1,0 +1,12 @@
+version: '3.4'
+
+services:
+    gcc:
+        container_name: 'gcc'
+        image: 'gcc'
+        ports:
+            - '9696:9696'
+        volumes:
+            - './:/var/www/html'
+        restart: unless-stopped
+        command: 'tail -f /dev/null'
