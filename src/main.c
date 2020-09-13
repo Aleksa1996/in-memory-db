@@ -5,9 +5,8 @@
 #include <errno.h>
 #include <sys/epoll.h>
 
-#include "db/item.h"
-#include "db/db.h"
 #include "server.h"
+#include "db/db.h"
 
 DB db;
 
@@ -91,27 +90,25 @@ int main(int argc, char const *argv[])
 			server_response.success = 0;
 			server_response.message = "Command failed.";
 			server_response.data = "";
+			Item *item;
 
-			if (strcmp(server_command->command, "get") == 0)
+			if (strncmp(server_command->command, GET_COMMAND, COMMAND_SIZE) == 0)
 			{
-				Item item;
-				strncpy(item.key, server_command->key, KEY_SIZE);
+				item = create_item_from_server_command(server_command);
 
-				if (DB_get(&db, &item) == 1)
+				if (DB_get(&db, item) == 1)
 				{
 					server_response.success = 1;
 					server_response.message = "Command succeeded.";
-					server_response.data = item.value;
+					server_response.data = item->value;
 				}
 			}
 
-			if (strcmp(server_command->command, "set") == 0)
+			if (strncmp(server_command->command, SET_COMMAND, COMMAND_SIZE) == 0)
 			{
-				Item item;
-				strncpy(item.key, server_command->key, KEY_SIZE);
-				strncpy(item.value, server_command->value, VALUE_SIZE);
+				item = create_item_from_server_command(server_command);
 
-				if (DB_set(&db, &item) == 1)
+				if (DB_set(&db, item) == 1)
 				{
 					server_response.success = 1;
 					server_response.message = "Command succeeded.";
@@ -119,12 +116,11 @@ int main(int argc, char const *argv[])
 				}
 			}
 
-			if (strcmp(server_command->command, "remove") == 0)
+			if (strncmp(server_command->command, REMOVE_COMMAND, COMMAND_SIZE) == 0)
 			{
-				Item item;
-				strncpy(item.key, server_command->key, KEY_SIZE);
+				item = create_item_from_server_command(server_command);
 
-				if (DB_remove(&db, &item) == 1)
+				if (DB_remove(&db, item) == 1)
 				{
 					server_response.success = 1;
 					server_response.message = "Command succeeded.";
@@ -137,6 +133,9 @@ int main(int argc, char const *argv[])
 			 */
 			server_send_response(events[i].data.fd, &server_response);
 
+			// DB_print(&db);
+
+			free(item);
 			free(server_request);
 			free(server_command);
 		}

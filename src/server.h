@@ -1,10 +1,16 @@
 #include <netinet/in.h>
+#include "db/item.h"
 
 /**
  * Defines
  */
 #define SERVER_PORT 9696
 #define MAX_EPOLL_EVENTS 1000
+
+#define COMMAND_SIZE 1000
+#define GET_COMMAND "get"
+#define SET_COMMAND "set"
+#define REMOVE_COMMAND "remove"
 
 /**
  * Server structure
@@ -59,3 +65,5 @@ Server_command *server_parse_request_as_command(Server_request *server_request, 
 int server_send_response(int socket, Server_response *server_response);
 
 int server_command_validate(Server_command *server_command, char *error);
+
+Item *create_item_from_server_command(Server_command *server_command);

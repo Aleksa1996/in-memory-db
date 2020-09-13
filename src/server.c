@@ -209,7 +209,6 @@ Server_command *server_parse_request_as_command(Server_request *server_request, 
 
     if (server_command_validate(server_command, error) == 0)
     {
-        // strcpy(error, command_validation_error);
         printf("%s\n", error);
         return NULL;
     }
@@ -262,7 +261,7 @@ int server_command_validate(Server_command *server_command, char *error)
      */
     for (i = 0; i < allowed_commands_size / allowed_commands_row_size; i++)
     {
-        if (strcmp(server_command->command, allowed_commands[i]) == 0)
+        if (strncmp(server_command->command, allowed_commands[i], COMMAND_SIZE) == 0)
         {
             valid = 1;
         }
@@ -277,11 +276,24 @@ int server_command_validate(Server_command *server_command, char *error)
     /**
      * Value required when we use set command
      */
-    if (strcmp(server_command->command, "set") == 0 && server_command->value[0] == '\0')
+    if (strncmp(server_command->command, SET_COMMAND, COMMAND_SIZE) == 0 && server_command->value[0] == '\0')
     {
-        sprintf(error, "Command 'set' requires a value.", server_command->command);
+        sprintf(error, "Command '%s' requires a value.", server_command->command);
         return 0;
     }
 
     return 1;
+}
+
+/**
+ * Create item for every received server command
+ */
+Item *create_item_from_server_command(Server_command *server_command)
+{
+    Item *item = (Item *)malloc(sizeof(Item));
+
+    strncpy(item->key, server_command->key, KEY_SIZE);
+    strncpy(item->value, server_command->value, VALUE_SIZE);
+
+    return item;
 }

@@ -9,7 +9,7 @@
 /**
  * Hash function used to generate key for hash table
  */
-int hash(char *key)
+unsigned long hash(char *key)
 {
     unsigned long h = 5381;
     int c;
@@ -33,7 +33,7 @@ int DB_get(DB *db, Item *item)
         return 0;
     }
 
-    int h = hash(item->key) % DB_SIZE;
+    unsigned long h = hash(item->key) % DB_SIZE;
     Item *tmpItem = db->items[h];
 
     while (tmpItem != NULL && (strncmp(tmpItem->key, item->key, KEY_SIZE) != 0))
@@ -61,7 +61,7 @@ int DB_set(DB *db, Item *item)
         return 0;
     }
 
-    int h = hash(item->key) % DB_SIZE;
+    unsigned long h = hash(item->key) % DB_SIZE;
 
     item->next = db->items[h];
     db->items[h] = item;
@@ -79,7 +79,7 @@ int DB_remove(DB *db, Item *item)
         return 0;
     }
 
-    int h = hash(item->key) % DB_SIZE;
+    unsigned long h = hash(item->key) % DB_SIZE;
 
     Item *tmpItem = db->items[h];
     Item *prevTmpItem = NULL;
@@ -105,4 +105,19 @@ int DB_remove(DB *db, Item *item)
     }
 
     return 1;
+}
+
+void DB_print(DB *db)
+{
+    for (int i = 0; i < DB_SIZE; i++)
+    {
+        printf("----\n");
+
+        Item *tmpItem = db->items[i];
+        while (tmpItem != NULL)
+        {
+            printf("    --- %s\n", tmpItem->key);
+            tmpItem = tmpItem->next;
+        }
+    }
 }

@@ -1,5 +1,5 @@
 app: main.o server.o cJSON.o db.o
-	$(CC) main.o server.o cJSON.o db.o -o app
+	$(CC) main.o server.o cJSON.o db.o -o app -g
 
 main.o: src/main.c src/epoll_util.h
 	$(CC) -c src/main.c
