@@ -63,6 +63,8 @@ int DB_set(DB *db, Item *item)
 
     unsigned long h = hash(item->key) % DB_SIZE;
 
+    DB_remove(db, item);
+
     item->next = db->items[h];
     db->items[h] = item;
 

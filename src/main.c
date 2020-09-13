@@ -95,6 +95,7 @@ int main(int argc, char const *argv[])
 			if (strncmp(server_command->command, GET_COMMAND, COMMAND_SIZE) == 0)
 			{
 				item = create_item_from_server_command(server_command);
+				printf("%d\n", item);
 
 				if (DB_get(&db, item) == 1)
 				{
@@ -107,6 +108,7 @@ int main(int argc, char const *argv[])
 			if (strncmp(server_command->command, SET_COMMAND, COMMAND_SIZE) == 0)
 			{
 				item = create_item_from_server_command(server_command);
+				printf("%d\n", item);
 
 				if (DB_set(&db, item) == 1)
 				{
@@ -119,6 +121,7 @@ int main(int argc, char const *argv[])
 			if (strncmp(server_command->command, REMOVE_COMMAND, COMMAND_SIZE) == 0)
 			{
 				item = create_item_from_server_command(server_command);
+				printf("%d\n", item);
 
 				if (DB_remove(&db, item) == 1)
 				{
@@ -135,7 +138,6 @@ int main(int argc, char const *argv[])
 
 			// DB_print(&db);
 
-			free(item);
 			free(server_request);
 			free(server_command);
 		}
